@@ -1,0 +1,1 @@
+package mx.edu.orderflow.notifications; import static org.junit.jupiter.api.Assertions.*; import org.junit.jupiter.api.Test; class NotificationServiceTest { @Test void createsConfirmation(){var m=new NotificationService().confirmation("1001","c-1"); assertTrue(m.message().contains("1001"));} }
