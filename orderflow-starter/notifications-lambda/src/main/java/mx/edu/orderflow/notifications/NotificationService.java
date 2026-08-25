@@ -1,1 +1,9 @@
-package mx.edu.orderflow.notifications; public class NotificationService { public NotificationMessage confirmation(String orderId,String customerId){ if(orderId==null||orderId.isBlank()) throw new IllegalArgumentException("orderId required"); return new NotificationMessage(orderId,customerId,"Order "+orderId+" confirmed"); } }
+package mx.edu.orderflow.notifications;
+
+public class NotificationService {
+    public NotificationMessage confirmation(String orderId, String customerId) {
+        if (orderId == null || orderId.isBlank())
+            throw new IllegalArgumentException("orderId required");
+        return new NotificationMessage(orderId, customerId, "Order " + orderId + " confirmed");
+    }
+}
