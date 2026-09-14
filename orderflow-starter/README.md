@@ -77,6 +77,42 @@ docs/evidence/
 
 Usen PR, pipeline, deployment o infraestructura sólo cuando ya correspondan al Sprint. Antes de eso registren: `N/A — todavía no corresponde a este Sprint.`
 
+## Análisis de calidad con SonarQube
+
+El proyecto utiliza **SonarQube** como herramienta de análisis estático de código. SonarQube inspecciona el código fuente en busca de:
+
+- **Code Smells** — malas prácticas y deuda técnica
+- **Bugs** — errores potenciales detectados por análisis estático
+- **Vulnerabilidades** — posibles problemas de seguridad
+- **Cobertura de tests** — porcentaje del código cubierto por pruebas unitarias
+- **Duplicaciones** — bloques de código repetidos
+
+El análisis se ejecuta automáticamente en cada push a `main` y en cada Pull Request mediante el workflow [`calidad.yml`](.github/workflows/calidad.yml).
+
+### Secrets requeridos en GitHub
+
+Para que el workflow de calidad funcione, se deben configurar los siguientes secrets en **Settings → Secrets and variables → Actions** del repositorio:
+
+| Secret | Descripción |
+|--------|-------------|
+| `SONAR_TOKEN` | Token de autenticación generado en SonarQube (Project → Administration → Security) |
+| `SONAR_HOST_URL` | URL del servidor SonarQube (ejemplo: `http://sonarqube.example.com:9000`) |
+
+### Comandos de análisis local
+
+Para ejecutar el análisis de SonarQube desde la línea de comandos local:
+
+```bash
+# 1. Build y tests
+mvn clean verify
+
+# 2. Análisis de Sonar (reemplazar los valores)
+mvn sonar:sonar \
+  -Dsonar.projectKey=orderflow-starter \
+  -Dsonar.host.url=<URL_DEL_SERVIDOR> \
+  -Dsonar.token=<TU_TOKEN>
+```
+
 ## Regla del semestre
 
 No implementen por adelantado `.github/workflows`, `delivery`, `infra`, `k8s` u `observability`. Esas carpetas se desarrollan progresivamente como evidencia de aprendizaje.
