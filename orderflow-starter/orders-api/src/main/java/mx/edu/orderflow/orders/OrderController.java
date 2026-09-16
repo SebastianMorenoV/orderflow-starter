@@ -24,7 +24,7 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody CreateOrderRequest r) {
+    public ResponseEntity<Object> create(@RequestBody CreateOrderRequest r) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(service.create(r.customerId(), r.total()));
         } catch (IllegalArgumentException e) {
