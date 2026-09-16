@@ -8,7 +8,7 @@
 | **Repositorio** | [SebastianMorenoV/orderflow-starter](https://github.com/SebastianMorenoV/orderflow-starter) |
 | **Proyecto SonarQube** | `orderflow-starter` |
 | **Producto Sonar** | SonarQube Community Edition 9.9.8 LTS (self-hosted en AWS EC2) |
-| **Commit de entrega** | *(se actualizará con el hash del commit final)* |
+| **Commit de entrega** | `c3b6b93` (rama `feature/evidencia-u1`) |
 
 | Integrante | GitHub |
 |---|---|
