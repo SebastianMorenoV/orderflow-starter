@@ -79,15 +79,24 @@ Usen PR, pipeline, deployment o infraestructura sólo cuando ya correspondan al 
 
 ## Análisis de calidad con SonarQube
 
-El proyecto utiliza **SonarQube** como herramienta de análisis estático de código. SonarQube inspecciona el código fuente en busca de:
+El proyecto utiliza **SonarQube Community Edition 9.9.8 LTS** (self-hosted en AWS EC2) como herramienta de análisis estático de código. SonarQube inspecciona el código fuente en busca de:
 
 - **Code Smells** — malas prácticas y deuda técnica
 - **Bugs** — errores potenciales detectados por análisis estático
 - **Vulnerabilidades** — posibles problemas de seguridad
-- **Cobertura de tests** — porcentaje del código cubierto por pruebas unitarias
+- **Cobertura de tests** — porcentaje del código cubierto por pruebas unitarias (requiere JaCoCo)
 - **Duplicaciones** — bloques de código repetidos
 
 El análisis se ejecuta automáticamente en cada push a `main` y en cada Pull Request mediante el workflow [`calidad.yml`](.github/workflows/calidad.yml).
+
+### Cobertura con JaCoCo
+
+El proyecto usa **JaCoCo** (Java Code Coverage, versión 0.8.12) para generar los reportes de cobertura que SonarQube importa. JaCoCo está configurado en el `pom.xml` de cada módulo con dos goals:
+
+- `prepare-agent` — instrumenta los tests para rastrear líneas ejecutadas.
+- `report` — genera el archivo `target/site/jacoco/jacoco.xml` durante la fase `verify`.
+
+La cobertura se genera automáticamente al ejecutar `mvn clean verify`.
 
 ### Secrets requeridos en GitHub
 
@@ -98,12 +107,14 @@ Para que el workflow de calidad funcione, se deben configurar los siguientes sec
 | `SONAR_TOKEN` | Token de autenticación generado en SonarQube (Project → Administration → Security) |
 | `SONAR_HOST_URL` | URL del servidor SonarQube (ejemplo: `http://sonarqube.example.com:9000`) |
 
+> **Nota:** No incluir valores de tokens en el código ni en documentación pública.
+
 ### Comandos de análisis local
 
 Para ejecutar el análisis de SonarQube desde la línea de comandos local:
 
 ```bash
-# 1. Build y tests
+# 1. Build, tests y cobertura
 mvn clean verify
 
 # 2. Análisis de Sonar (reemplazar los valores)
@@ -113,6 +124,13 @@ mvn sonar:sonar \
   -Dsonar.token=<TU_TOKEN>
 ```
 
+### Limitaciones de la edición Community
+
+- No soporta análisis de ramas ni de Pull Requests (solo rama principal).
+- No tiene integración con GitHub Checks para bloqueo automático de merge.
+- Para estas funcionalidades se requiere Developer Edition o superior.
+
 ## Regla del semestre
 
 No implementen por adelantado `.github/workflows`, `delivery`, `infra`, `k8s` u `observability`. Esas carpetas se desarrollan progresivamente como evidencia de aprendizaje.
+
