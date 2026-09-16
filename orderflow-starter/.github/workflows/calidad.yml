@@ -31,7 +31,7 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Build y tests
+      - name: Build, tests y cobertura (JaCoCo)
         run: mvn -B clean verify
         working-directory: orderflow-starter
 
@@ -44,5 +44,6 @@ jobs:
             -Dsonar.projectKey=orderflow-starter \
             -Dsonar.projectName="OrderFlow Starter" \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.coverage.jacoco.xmlReportPaths=orders-api/target/site/jacoco/jacoco.xml,notifications-lambda/target/site/jacoco/jacoco.xml
         working-directory: orderflow-starter
