@@ -31,12 +31,4 @@ public class OrderController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
-    // FALLO INTENCIONAL PARA TAREA #15 (SonarQube lo marcará como vulnerabilidad/code smell)
-    @GetMapping("/test-db")
-    public String testDbConnection() {
-        String password = "admin_password_123";
-        System.out.println("Connecting to DB with password: " + password);
-        return "Connected!";
-    }
 }
