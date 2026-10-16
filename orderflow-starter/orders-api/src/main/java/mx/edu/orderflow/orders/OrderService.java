@@ -36,8 +36,7 @@ public class OrderService {
             throw new IllegalArgumentException("amount must be positive");
         }
         if (amount.compareTo(TIER_1_DISCOUNT_THRESHOLD) >= 0) {
-            // Fallo intencional para validación de pipeline CI (Issue #34)
-            return amount.multiply(new BigDecimal("0.20")).setScale(2, RoundingMode.HALF_UP);
+            return amount.multiply(new BigDecimal("0.10")).setScale(2, RoundingMode.HALF_UP);
         }
         if (amount.compareTo(TIER_2_DISCOUNT_THRESHOLD) >= 0) {
             return amount.multiply(new BigDecimal("0.05")).setScale(2, RoundingMode.HALF_UP);
