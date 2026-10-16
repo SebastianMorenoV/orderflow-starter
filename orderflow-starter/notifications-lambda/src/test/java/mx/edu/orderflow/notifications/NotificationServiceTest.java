@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class NotificationServiceTest {
 
@@ -31,16 +34,13 @@ class NotificationServiceTest {
                 () -> assertEquals("Order 1001 confirmed", message.message()));
     }
 
-    @Test
-    void rejectsNullOrBlankOrderId() {
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = { "  ", "\t" })
+    void rejectsNullOrBlankOrderId(String orderId) {
         // Arrange
-        String[] invalidOrderIds = { null, "", "  " };
-
         // Act / Assert
-        for (String orderId : invalidOrderIds) {
-            assertThrows(IllegalArgumentException.class,
-                    () -> service.confirmation(orderId, "c-1"));
-        }
+        assertThrows(IllegalArgumentException.class, () -> service.confirmation(orderId, "c-1"));
     }
 
     @Test

@@ -4,8 +4,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class OrderServiceTest {
 
@@ -34,96 +41,108 @@ class OrderServiceTest {
                 () -> assertEquals(OrderStatus.CREATED, order.status()));
     }
 
-    @Test
-    void rejectsInvalidCustomerIds() {
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = { "  ", "ab" })
+    void rejectsInvalidCustomerIds(String customerId) {
         // Arrange
-        String[] invalidCustomerIds = { null, "", "  ", "ab" };
+        BigDecimal total = new BigDecimal("10.00");
 
         // Act / Assert
-        for (String customerId : invalidCustomerIds) {
-            assertThrows(IllegalArgumentException.class,
-                    () -> service.create(customerId, new BigDecimal("10.00")),
-                    "Debe rechazar customerId: " + customerId);
+        assertThrows(IllegalArgumentException.class, () -> service.create(customerId, total));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidTotals")
+    void rejectsNullZeroAndNegativeTotals(BigDecimal total) {
+        // Arrange
+        // Act / Assert
+        assertThrows(IllegalArgumentException.class, () -> service.create("student-1", total));
+    }
+
+    static Stream<Arguments> invalidTotals() {
+        return Stream.of(
+                Arguments.of((Object) null),
+                Arguments.of(BigDecimal.ZERO),
+                Arguments.of(new BigDecimal("-1.00")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("orderTotalsAtMaximumBoundary")
+    void validatesOrderTotalAtMaximumBoundary(BigDecimal total, boolean isValid) {
+        // Arrange
+        if (isValid) {
+            // Act
+            Order order = service.create("student-1", total);
+
+            // Assert
+            assertEquals(total, order.total());
+        } else {
+            // Act / Assert
+            assertThrows(IllegalArgumentException.class, () -> service.create("student-1", total));
         }
     }
 
-    @Test
-    void rejectsNullZeroAndNegativeTotals() {
-        // Arrange
-        BigDecimal[] invalidTotals = { null, BigDecimal.ZERO, new BigDecimal("-1.00") };
-
-        // Act / Assert
-        for (BigDecimal total : invalidTotals) {
-            assertThrows(IllegalArgumentException.class,
-                    () -> service.create("student-1", total));
-        }
+    static Stream<Arguments> orderTotalsAtMaximumBoundary() {
+        return Stream.of(
+                Arguments.of(new BigDecimal("49999.99"), true),
+                Arguments.of(new BigDecimal("50000.00"), true),
+                Arguments.of(new BigDecimal("50000.01"), false));
     }
 
-    @Test
-    void rejectsTotalAboveMaximum() {
+    @ParameterizedTest
+    @MethodSource("discountCases")
+    void calculatesDiscountAtTierBoundaries(BigDecimal amount, BigDecimal expectedDiscount) {
         // Arrange
-        BigDecimal totalAboveMaximum = new BigDecimal("50000.01");
-
-        // Act / Assert
-        assertThrows(IllegalArgumentException.class,
-                () -> service.create("student-1", totalAboveMaximum));
-    }
-
-    @Test
-    void calculatesDiscountForEachTier() {
-        // Arrange
-        BigDecimal tierOneAmount = new BigDecimal("1000.00");
-        BigDecimal tierTwoAmount = new BigDecimal("500.00");
-        BigDecimal noDiscountAmount = new BigDecimal("499.99");
-
         // Act
-        BigDecimal tierOneDiscount = service.calculateDiscount(tierOneAmount);
-        BigDecimal tierTwoDiscount = service.calculateDiscount(tierTwoAmount);
-        BigDecimal noDiscount = service.calculateDiscount(noDiscountAmount);
+        BigDecimal discount = service.calculateDiscount(amount);
 
         // Assert
-        assertAll(
-                () -> assertEquals(new BigDecimal("100.00"), tierOneDiscount),
-                () -> assertEquals(new BigDecimal("25.00"), tierTwoDiscount),
-                () -> assertEquals(new BigDecimal("0.00"), noDiscount));
+        assertEquals(expectedDiscount, discount);
     }
 
-    @Test
-    void rejectsInvalidDiscountAmounts() {
-        // Arrange
-        BigDecimal[] invalidAmounts = { null, BigDecimal.ZERO, new BigDecimal("-1.00") };
+    static Stream<Arguments> discountCases() {
+        return Stream.of(
+                Arguments.of(new BigDecimal("499.99"), new BigDecimal("0.00")),
+                Arguments.of(new BigDecimal("500.00"), new BigDecimal("25.00")),
+                Arguments.of(new BigDecimal("999.99"), new BigDecimal("50.00")),
+                Arguments.of(new BigDecimal("1000.00"), new BigDecimal("100.00")));
+    }
 
+    @ParameterizedTest
+    @MethodSource("invalidTotals")
+    void rejectsInvalidDiscountAmounts(BigDecimal amount) {
+        // Arrange
         // Act / Assert
-        for (BigDecimal amount : invalidAmounts) {
-            assertThrows(IllegalArgumentException.class, () -> service.calculateDiscount(amount));
-        }
+        assertThrows(IllegalArgumentException.class, () -> service.calculateDiscount(amount));
     }
 
-    @Test
-    void calculatesShippingBasedOnAmountAfterDiscount() {
+    @ParameterizedTest
+    @CsvSource({ "299.99, 50.00", "300.00, 0.00", "300.01, 0.00" })
+    void calculatesShippingAtFreeShippingBoundary(String amountText, String expectedCostText) {
         // Arrange
-        BigDecimal eligibleForFreeShipping = new BigDecimal("300.00");
-        BigDecimal chargedShipping = new BigDecimal("299.99");
+        BigDecimal amount = new BigDecimal(amountText);
+        BigDecimal expectedCost = new BigDecimal(expectedCostText);
 
         // Act
-        BigDecimal freeShipping = service.calculateShippingCost(eligibleForFreeShipping);
-        BigDecimal standardShipping = service.calculateShippingCost(chargedShipping);
+        BigDecimal shippingCost = service.calculateShippingCost(amount);
 
         // Assert
-        assertAll(
-                () -> assertEquals(new BigDecimal("0.00"), freeShipping),
-                () -> assertEquals(new BigDecimal("50.00"), standardShipping));
+        assertEquals(expectedCost, shippingCost);
     }
 
-    @Test
-    void rejectsNullOrNegativeShippingAmounts() {
+    @ParameterizedTest
+    @MethodSource("invalidShippingAmounts")
+    void rejectsNullOrNegativeShippingAmounts(BigDecimal amount) {
         // Arrange
-        BigDecimal[] invalidAmounts = { null, new BigDecimal("-0.01") };
-
         // Act / Assert
-        for (BigDecimal amount : invalidAmounts) {
-            assertThrows(IllegalArgumentException.class, () -> service.calculateShippingCost(amount));
-        }
+        assertThrows(IllegalArgumentException.class, () -> service.calculateShippingCost(amount));
+    }
+
+    static Stream<Arguments> invalidShippingAmounts() {
+        return Stream.of(
+                Arguments.of((Object) null),
+                Arguments.of(new BigDecimal("-0.01")));
     }
 
     @Test
@@ -138,15 +157,12 @@ class OrderServiceTest {
         assertEquals(new BigDecimal("150.00"), finalTotal);
     }
 
-    @Test
-    void rejectsInvalidFinalTotalSubtotal() {
+    @ParameterizedTest
+    @MethodSource("invalidTotals")
+    void rejectsInvalidFinalTotalSubtotal(BigDecimal subtotal) {
         // Arrange
-        BigDecimal[] invalidSubtotals = { null, BigDecimal.ZERO, new BigDecimal("-1.00") };
-
         // Act / Assert
-        for (BigDecimal subtotal : invalidSubtotals) {
-            assertThrows(IllegalArgumentException.class, () -> service.calculateFinalTotal(subtotal));
-        }
+        assertThrows(IllegalArgumentException.class, () -> service.calculateFinalTotal(subtotal));
     }
 
     @Test
