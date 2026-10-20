@@ -24,3 +24,7 @@ jobs:
       - name: Ejecutar pruebas con Maven
         run: mvn -B test
         working-directory: orderflow-starter
+
+      - name: Construir imagen Docker con SHA del commit
+        run: |
+          docker build -t orders-api:${{ github.sha }} -t 44.210.219.240:8082/orders-api:${{ github.sha }} .
